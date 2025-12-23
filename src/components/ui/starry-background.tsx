@@ -298,7 +298,7 @@ function ShootingStar({ trail }: { trail: any }) {
 // --- Main Component ---
 export function StarryBackground() {
     return (
-        <div className="fixed inset-0 w-full h-full z-[-1] bg-gradient-to-b from-black to-[#090a0f]">
+        <div className="fixed inset-0 w-full h-full z-0 bg-gradient-to-b from-black to-[#090a0f]">
             <Canvas camera={{ position: [0, 0, 300], fov: 60 }} gl={{ antialias: false, alpha: true }}>
                 <StarField count={8000} />
                 <CrossStars count={150} />

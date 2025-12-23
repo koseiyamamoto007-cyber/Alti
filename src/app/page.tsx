@@ -59,9 +59,9 @@ export default function DashboardPage() {
   const handleNextDay = () => setCurrentDate(prev => addDays(prev, 1));
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center py-8 px-4 font-sans selection:bg-neon-blue selection:text-white">
+    <main className="min-h-screen w-full flex flex-col items-center py-8 px-4 font-sans selection:bg-neon-blue selection:text-white relative">
       <StarryBackground />
-      <div className="w-full max-w-md space-y-8 flex flex-col items-center">
+      <div className="w-full max-w-md space-y-8 flex flex-col items-center relative z-10">
 
         {/* Header & Main Goal */}
         <div className="text-center space-y-4 w-full">
