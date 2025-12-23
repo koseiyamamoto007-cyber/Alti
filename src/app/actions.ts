@@ -10,26 +10,53 @@ export async function generateAIResponse(message: string) {
     try {
         const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
-        // Using gemini-3.0-flash-exp (Experimental Free Model)
-        const result = await genAI.models.generateContent({
-            model: "gemini-3.0-flash-exp",
-            config: {
-                temperature: 0.3,
-                systemInstruction: {
-                    parts: [
-                        { text: "あなたは目標達成アプリ『Elevate Pro』の専属AIコーチです。ユーザーに対し、常に具体的で実行可能なアドバイスを行い、励ますようなトーンで対話してください。" }
-                    ]
-                }
-            },
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: message } // Removing the manual template prompt since we use systemInstruction now
-                    ]
-                }
-            ]
-        });
+        let result;
+
+        try {
+            // Attempting to use Gemini 3.0 Flash Preview (Experimental/Free tier)
+            // Name 'gemini-3-flash-preview' confirmed via models.list()
+            result = await genAI.models.generateContent({
+                model: "gemini-3-flash-preview",
+                config: {
+                    temperature: 0.3,
+                    systemInstruction: {
+                        parts: [
+                            { text: "あなたは目標達成アプリ『Elevate Pro』の専属AIコーチです。ユーザーに対し、常に具体的で実行可能なアドバイスを行い、励ますようなトーンで対話してください。" }
+                        ]
+                    }
+                },
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: message }
+                        ]
+                    }
+                ]
+            });
+        } catch (modelError: any) {
+            console.warn("Gemini 3.0 Flash Preview failed, falling back to 2.5 Flash:", modelError.message);
+            // Fallback to gemini-2.5-flash
+            result = await genAI.models.generateContent({
+                model: "gemini-2.5-flash",
+                config: {
+                    temperature: 0.3,
+                    systemInstruction: {
+                        parts: [
+                            { text: "あなたは目標達成アプリ『Elevate Pro』の専属AIコーチです。ユーザーに対し、常に具体的で実行可能なアドバイスを行い、励ますようなトーンで対話してください。" }
+                        ]
+                    }
+                },
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: message }
+                        ]
+                    }
+                ]
+            });
+        }
 
         // Debug log to understand response structure in Vercel if needed
         console.log("Gemini Response Keys:", Object.keys(result));
