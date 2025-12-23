@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  /* Neon Google Colors */
+  --color-neon-blue: #2962FF;
+  /* Brighter Blue */
+  --color-neon-red: #FF1744;
+  /* Brighter Red */
+  --color-neon-yellow: #FFEA00;
+  /* Brighter Yellow */
+  --color-neon-green: #00E676;
+  /* Brighter Green */
+
+  /* Base System Colors */
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: var(--color-neon-blue);
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: var(--color-neon-red);
+  --color-destructive-foreground: #ffffff;
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Custom Animations */
+  --animate-neon-pulse: neon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes neon-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+      filter: brightness(1);
+    }
+
+    50% {
+      opacity: .7;
+      filter: brightness(1.2);
+    }
+  }
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --background: 240 10% 4%;
+    /* Deep dark #0a0a0b */
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Slate-ish for neutrals */
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 221 83% 53%;
+    /* Blue */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .border-neon-google {
+    border-image: linear-gradient(to right, var(--color-neon-blue), var(--color-neon-red), var(--color-neon-yellow), var(--color-neon-green)) 1;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .box-glow {
+    box-shadow: 0 0 20px rgba(41, 98, 255, 0.15);
+  }
+}
