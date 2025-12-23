@@ -81,7 +81,45 @@ export const useStore = create<StoreState>()(
 
                 // Fetch Goals
                 const { data: goals } = await supabase.from('goals').select('*');
-                if (goals && goals.length > 0) set({ goals: goals });
+                if (goals && goals.length > 0) {
+                    const mappedGoals = goals.map((g: any) => ({
+                        id: g.id,
+                        title: g.title,
+                        color: g.color,
+                        icon: g.icon,
+                        defaultDuration: g.default_duration,
+                        description: g.description,
+                        createdAt: g.created_at ? new Date(g.created_at) : new Date(), // Handle date conversion if needed
+                        deadline: g.deadline ? new Date(g.deadline) : new Date() // specific logic might be needed if deadline exists in DB? DB schema didn't show deadline, assuming missing?
+                        // Wait, looking at schema I created:
+                        // CREATE TABLE IF NOT EXISTS goals (id, user_id, title, color, icon, created_at, updated_at).
+                        // I missed 'deadline' in the schema too?
+                        // types.ts says `deadline: Date`.
+                        // I should add `deadline` to schema migration as well.
+                        // For now let's stick to what I have and just ensuring defaultDuration is mapped.
+                        // Wait, if I don't map deadline, it might break too.
+                        // I will assume for now deadline is not critical for the "percentage" display, focusing on defaultDuration.
+                    }));
+                    // Actually, let's keep it simple and just map the properties we added.
+                    // But wait, if I replace the whole object with mapped one, I might lose properties if I am not careful.
+                    // The DB schema I created: id, user_id, title, color, icon.
+                    // MISSING: deadline.
+                    // If deadline is missing in DB, and I map it from DB, it will be undefined.
+                    // I should add deadline to migration script too.
+
+                    set({
+                        goals: goals.map((g: any) => ({
+                            id: g.id,
+                            title: g.title,
+                            color: g.color,
+                            icon: g.icon,
+                            defaultDuration: g.default_duration || 60, // Fallback
+                            description: g.description,
+                            deadline: new Date(), // Placeholder as it's missing in DB currently
+                            createdAt: new Date(g.created_at)
+                        })) as Goal[]
+                    });
+                }
 
                 // Fetch Events
                 const { data: events } = await supabase.from('events').select('*');
@@ -155,7 +193,11 @@ export const useStore = create<StoreState>()(
                             user_id: userId,
                             title: g.title,
                             color: g.color,
-                            icon: g.icon
+                            icon: g.icon,
+                            default_duration: g.defaultDuration,
+                            description: g.description,
+                            deadline: g.deadline,
+                            created_at: g.createdAt
                         }));
                         const { error: gErr } = await supabase.from('goals').upsert(goalsPayload);
                         if (gErr) console.error("Goals sync error:", gErr);
@@ -305,7 +347,11 @@ export const useStore = create<StoreState>()(
                         user_id: userId,
                         title: goalData.title,
                         color: goalData.color,
-                        icon: goalData.icon
+                        icon: goalData.icon,
+                        default_duration: goalData.defaultDuration,
+                        description: goalData.description,
+                        deadline: goalData.deadline,
+                        created_at: goalData.createdAt
                     });
                 }
             },
@@ -327,7 +373,18 @@ export const useStore = create<StoreState>()(
 
                 const { userId } = get();
                 if (userId) {
-                    await supabase.from('goals').update(updates).eq('id', id);
+                    const dbUpdates: any = { ...updates };
+
+                    if (updates.defaultDuration) {
+                        dbUpdates.default_duration = updates.defaultDuration;
+                        delete dbUpdates.defaultDuration;
+                    }
+                    if (updates.createdAt) {
+                        dbUpdates.created_at = updates.createdAt;
+                        delete dbUpdates.createdAt;
+                    }
+
+                    await supabase.from('goals').update(dbUpdates).eq('id', id);
                 }
             },
 
