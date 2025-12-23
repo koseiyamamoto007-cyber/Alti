@@ -15,9 +15,9 @@ export async function generateAIResponse(message: string) {
         Keep your responses concise, encouraging, and helpful.
         User message: ${message}`;
 
-        // Switch to gemini-1.5-flash due to Limit 0 on 2.0-flash
+        // Using gemini-2.5-flash as the latest stable model
         const result = await genAI.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.5-flash",
             contents: [
                 {
                     role: "user",
