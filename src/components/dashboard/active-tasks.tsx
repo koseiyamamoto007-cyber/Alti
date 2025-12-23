@@ -82,7 +82,7 @@ export function ActiveTasks({ date }: ActiveTasksProps) {
                                                         const val = parseInt(e.target.value) || 0;
                                                         updateProgress(event.id, Math.min(totalMinutes, Math.max(0, val)));
                                                     }}
-                                                    className="w-16 h-6 text-xs bg-slate-900 border-slate-700 text-neon-yellow font-mono text-center p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    className="w-16 h-8 md:h-6 text-base md:text-xs bg-slate-900 border-slate-700 text-neon-yellow font-mono text-center p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
                                                 <span className="text-muted-foreground text-[10px] font-mono">min</span>
                                             </div>

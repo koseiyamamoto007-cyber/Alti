@@ -136,7 +136,7 @@ export function ChatWidget() {
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                                     placeholder="Type a message..."
-                                    className="bg-black/50 border-white/10 text-white focus:border-neon-blue/50 placeholder:text-zinc-600 font-mono text-xs h-9"
+                                    className="bg-black/50 border-white/10 text-white focus:border-neon-blue/50 placeholder:text-zinc-600 font-mono text-base md:text-xs h-9"
                                 />
                                 <Button onClick={handleSendMessage} size="icon" className="h-9 w-9 bg-neon-blue hover:bg-neon-blue/80 text-white shadow-[0_0_10px_rgba(41,98,255,0.3)]">
                                     <Send className="w-4 h-4" />

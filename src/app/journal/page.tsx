@@ -80,7 +80,7 @@ export default function JournalPage() {
                                 <Filter className="w-4 h-4 text-neon-blue" />
                             </div>
                             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                                <SelectTrigger className="w-[180px] bg-transparent border-none focus:ring-0 text-white font-mono text-sm">
+                                <SelectTrigger className="w-[180px] bg-transparent border-none focus:ring-0 text-white font-mono text-base md:text-sm">
                                     <SelectValue placeholder="Select Month" />
                                 </SelectTrigger>
                                 <SelectContent>

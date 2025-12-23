@@ -304,7 +304,7 @@ function DailyJournal({ date }: { date: Date }) {
           <Textarea
             value={tempContent}
             onChange={(e) => setTempContent(e.target.value)}
-            className="bg-black/40 border-[#FF0033]/50 min-h-[150px] text-white focus:border-[#FF0033] focus:ring-1 focus:ring-[#FF0033] font-mono text-sm shadow-[0_0_20px_rgba(255,0,51,0.1)]"
+            className="bg-black/40 border-[#FF0033]/50 min-h-[150px] text-white focus:border-[#FF0033] focus:ring-1 focus:ring-[#FF0033] font-mono text-base md:text-sm shadow-[0_0_20px_rgba(255,0,51,0.1)]"
             placeholder="Write your thoughts for today..."
           />
           <div className="flex justify-end gap-2">
@@ -375,7 +375,7 @@ function DailyMemo({ date }: { date: Date }) {
           <Textarea
             value={tempContent}
             onChange={(e) => setTempContent(e.target.value)}
-            className="bg-black/40 border-white/10 min-h-[80px] text-white focus:border-neon-blue/50 font-mono text-sm"
+            className="bg-black/40 border-white/10 min-h-[80px] text-white focus:border-neon-blue/50 font-mono text-base md:text-sm"
             placeholder="Quick notes or reminders..."
           />
           <div className="flex justify-end gap-2">
