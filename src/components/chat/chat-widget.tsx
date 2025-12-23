@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStore } from "@/lib/store";
+import { generateAIResponse } from "@/app/actions";
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const messages = useStore((state) => state.messages);
     const addMessage = useStore((state) => state.addMessage);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -20,18 +22,25 @@ export function ChatWidget() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, isOpen]);
+    }, [messages, isOpen, isLoading]);
 
-    const handleSendMessage = () => {
-        if (!inputValue.trim()) return;
+    const handleSendMessage = async () => {
+        if (!inputValue.trim() || isLoading) return;
 
-        addMessage({ role: "user", content: inputValue });
+        const userMsg = inputValue.trim();
+        addMessage({ role: "user", content: userMsg });
         setInputValue("");
+        setIsLoading(true);
 
-        // Simulate bot response
-        setTimeout(() => {
-            addMessage({ role: "assistant", content: "I'm your AI assistant. I'm here to help you achieve your goals." });
-        }, 1000);
+        try {
+            const aiResponse = await generateAIResponse(userMsg);
+            addMessage({ role: "assistant", content: aiResponse });
+        } catch (error) {
+            console.error("AI Error:", error);
+            addMessage({ role: "assistant", content: "Sorry, I encountered an error. Please try again." });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Idle Timer Logic
@@ -125,6 +134,14 @@ export function ChatWidget() {
                                     </div>
                                 </div>
                             ))}
+                            {isLoading && (
+                                <div className="flex justify-start animate-pulse">
+                                    <div className="bg-white/5 border border-white/10 text-zinc-400 rounded-lg rounded-bl-none p-3 text-xs flex items-center gap-1">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Thinking...
+                                    </div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 
@@ -134,12 +151,19 @@ export function ChatWidget() {
                                 <Input
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                                    placeholder="Type a message..."
-                                    className="bg-black/50 border-white/10 text-white focus:border-neon-blue/50 placeholder:text-zinc-600 font-mono text-base md:text-xs h-9"
+                                    // Make sure disabled check uses existing !isLoading logic
+                                    onKeyDown={(e) => e.key === "Enter" && !isLoading && handleSendMessage()}
+                                    disabled={isLoading}
+                                    placeholder={isLoading ? "AI is processing..." : "Type a message..."}
+                                    className="bg-black/50 border-white/10 text-white focus:border-neon-blue/50 placeholder:text-zinc-600 font-mono text-base md:text-xs h-9 disabled:opacity-50"
                                 />
-                                <Button onClick={handleSendMessage} size="icon" className="h-9 w-9 bg-neon-blue hover:bg-neon-blue/80 text-white shadow-[0_0_10px_rgba(41,98,255,0.3)]">
-                                    <Send className="w-4 h-4" />
+                                <Button
+                                    onClick={handleSendMessage}
+                                    disabled={isLoading}
+                                    size="icon"
+                                    className="h-9 w-9 bg-neon-blue hover:bg-neon-blue/80 text-white shadow-[0_0_10px_rgba(41,98,255,0.3)] disabled:opacity-50"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                 </Button>
                             </div>
                         </div>
