@@ -44,8 +44,43 @@ export async function generateAIResponse(message: string) {
 
         return "AI response received but could not extract text.";
 
-    } catch (error) {
-        console.error("Gemini API Error:", error);
-        return "Sorry, I'm having trouble connecting to my brain right now. I may be upgrading my neural networks!";
+    } catch (error: any) {
+        console.error("Gemini API Error (2.0):", {
+            message: error.message,
+            status: error.status,
+            details: error
+        });
+
+        // Fallback to gemini-1.5-flash if 2.0 fails (e.g. 404 Not Found)
+        if (error.message?.includes("404") || error.message?.includes("not found")) {
+            console.log("Attempting fallback to gemini-1.5-flash...");
+            try {
+                // Re-initialize might not be needed if genAI instance is reused, but model needs change
+                // Note: We need to use 'genai' namespace we imported
+                const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
+                const fallbackResult = await genAI.models.generateContent({
+                    model: "gemini-1.5-flash",
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [{
+                                text: `You are an AI assistant for a goal-tracking app called "Alti".
+                            Your goal is to help users stay motivated and achieve their goals.
+                            Keep your responses concise, encouraging, and helpful.
+                            User message: ${message}`
+                            }]
+                        }
+                    ]
+                });
+
+                const candidates = fallbackResult.candidates || (fallbackResult as any).response?.candidates;
+                const text = candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) return text + " (Note: Model 2.0 unavailable, using 1.5)";
+            } catch (fallbackError: any) {
+                console.error("Fallback Gemini API Error (1.5):", fallbackError);
+            }
+        }
+
+        return `Sorry, I'm having trouble connecting to my brain right now. Error: ${error.message || "Unknown error"}`;
     }
 }
