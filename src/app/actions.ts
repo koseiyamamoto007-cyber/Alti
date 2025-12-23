@@ -10,9 +10,9 @@ export async function generateAIResponse(message: string) {
     try {
         const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
-        // Using gemini-2.5-pro as requested (Stable release found)
+        // Using gemini-2.5-flash due to Pro model quota limits (429)
         const result = await genAI.models.generateContent({
-            model: "gemini-2.5-pro",
+            model: "gemini-2.5-flash",
             config: {
                 temperature: 0.3,
                 systemInstruction: {
