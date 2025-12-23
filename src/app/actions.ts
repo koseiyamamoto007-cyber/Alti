@@ -10,9 +10,9 @@ export async function generateAIResponse(message: string) {
     try {
         const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
-        // Upgrading to gemini-1.5-pro for better reasoning (2.5-pro not yet widely available)
+        // Using gemini-2.5-pro as requested (Stable release found)
         const result = await genAI.models.generateContent({
-            model: "gemini-1.5-pro",
+            model: "gemini-2.5-pro",
             config: {
                 temperature: 0.3,
                 systemInstruction: {
