@@ -1,73 +1,77 @@
 // @ts-nocheck
 "use client";
 
-import React, { useRef, useMemo, useState } from "react";
+import React, { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-// --- Utility: Generate Cross Texture ---
-const createCrossTexture = () => {
-    if (typeof document === 'undefined') return new THREE.Texture();
-    const canvas = document.createElement("canvas");
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return new THREE.Texture();
+// --- Utility: Generate Cross Texture (Client Side) ---
+const useCrossTexture = () => {
+    const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
-    ctx.clearRect(0, 0, 64, 64);
-    ctx.fillStyle = "white";
-    ctx.shadowColor = "white";
-    ctx.shadowBlur = 4;
+    useEffect(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-    // Draw Cross
-    const cx = 32, cy = 32, size = 20, thick = 6;
-    ctx.fillRect(cx - size, cy - thick / 2, size * 2, thick);
-    ctx.fillRect(cx - thick / 2, cy - size, thick, size * 2);
+        ctx.clearRect(0, 0, 64, 64);
 
-    const tex = new THREE.CanvasTexture(canvas);
-    return tex;
+        // Glow
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = "white";
+
+        // Draw Cross
+        const cx = 32, cy = 32, size = 22, thick = 6;
+        ctx.fillRect(cx - size, cy - thick / 2, size * 2, thick);
+        ctx.fillRect(cx - thick / 2, cy - size, thick, size * 2);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        setTexture(tex);
+    }, []);
+
+    return texture;
 };
 
 // --- Component: Dense Star Field (Dots) ---
-function StarField({ count = 5000 }) {
+function StarField({ count = 6000 }) {
     const mesh = useRef<THREE.Points>(null);
 
-    const particles = useMemo(() => {
-        const temp = new Float32Array(count * 3);
-        const sizes = new Float32Array(count);
-        const timeOffsets = new Float32Array(count);
+    // Create geometry data once
+    const { positions, sizes, timeOffsets } = useMemo(() => {
+        const p = new Float32Array(count * 3);
+        const s = new Float32Array(count);
+        const t = new Float32Array(count);
 
         for (let i = 0; i < count; i++) {
-            const x = (Math.random() - 0.5) * 800; // Wide spread
-            const y = (Math.random() - 0.5) * 800;
-            const z = (Math.random() - 0.5) * 600 - 100; // Depth
-            temp[i * 3] = x;
-            temp[i * 3 + 1] = y;
-            temp[i * 3 + 2] = z;
+            // x: -600 to 600, y: -400 to 400, z: -200 to 400
+            p[i * 3] = (Math.random() - 0.5) * 1200;
+            p[i * 3 + 1] = (Math.random() - 0.5) * 800;
+            p[i * 3 + 2] = (Math.random() - 0.5) * 600;
 
-            sizes[i] = Math.random() * 2; // Varying size
-            timeOffsets[i] = Math.random() * 100;
+            s[i] = Math.random() * 2.5;
+            t[i] = Math.random() * 50;
         }
-        return { positions: temp, sizes, timeOffsets };
+        return { positions: p, sizes: s, timeOffsets: t };
     }, [count]);
 
+    // Stable uniforms object
     const uniforms = useMemo(() => ({
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color("#ffffff") }
     }), []);
 
     useFrame((state) => {
-        const { clock } = state;
-        if (mesh.current && mesh.current.material) {
-            // @ts-ignore
-            mesh.current.material.uniforms.uTime.value = clock.getElapsedTime();
-            // Drift effect: Rotate slighty
-            mesh.current.rotation.y = clock.getElapsedTime() * 0.005;
-            mesh.current.rotation.x = clock.getElapsedTime() * 0.002;
+        // Update the UNIFORM VALUE directly
+        uniforms.uTime.value = state.clock.getElapsedTime();
+
+        if (mesh.current) {
+            // Slow rotation drift
+            mesh.current.rotation.y = state.clock.getElapsedTime() * 0.002;
         }
     });
 
-    // Custom Shader for Twinkling
     const onBeforeCompile = (shader: any) => {
         shader.uniforms.uTime = uniforms.uTime;
 
@@ -83,9 +87,9 @@ function StarField({ count = 5000 }) {
             '#include <begin_vertex>',
             `
       #include <begin_vertex>
-      float twinkle = sin(uTime * 1.5 + timeOffset) * 0.5 + 0.5;
-      vAlpha = twinkle;
-      gl_PointSize = aSize * (1.0 + twinkle * 0.5); // Size pulse
+      float twinkle = sin(uTime * 2.0 + timeOffset) * 0.5 + 0.5;
+      vAlpha = 0.3 + twinkle * 0.7; // Base opacity + twinkle
+      gl_PointSize = aSize * (1.0 + twinkle * 0.3); 
       `
         );
 
@@ -106,17 +110,18 @@ function StarField({ count = 5000 }) {
     return (
         <points ref={mesh}>
             <bufferGeometry>
-                <bufferAttribute attach="attributes-position" count={particles.positions.length / 3} array={particles.positions} itemSize={3} />
-                <bufferAttribute attach="attributes-aSize" count={particles.sizes.length} array={particles.sizes} itemSize={1} />
-                <bufferAttribute attach="attributes-timeOffset" count={particles.timeOffsets.length} array={particles.timeOffsets} itemSize={1} />
+                <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
+                <bufferAttribute attach="attributes-aSize" count={sizes.length} array={sizes} itemSize={1} />
+                <bufferAttribute attach="attributes-timeOffset" count={timeOffsets.length} array={timeOffsets} itemSize={1} />
             </bufferGeometry>
+            {/* Use standard size to ensure debug visibility if shader fails */}
             <pointsMaterial
-                size={1.5}
+                size={2}
                 sizeAttenuation={true}
                 color="white"
                 transparent
+                opacity={1}
                 depthWrite={false}
-                opacity={0.8}
                 onBeforeCompile={onBeforeCompile}
             />
         </points>
@@ -124,93 +129,94 @@ function StarField({ count = 5000 }) {
 }
 
 // --- Component: Cross Stars (Accent) ---
-function CrossStars({ count = 250 }) {
+function CrossStars({ count = 200 }) {
     const mesh = useRef<THREE.Points>(null);
-    const texture = useMemo(() => createCrossTexture(), []);
+    const texture = useCrossTexture(); // Use hook
 
-    const particles = useMemo(() => {
+    const positions = useMemo(() => {
         const temp = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
-            temp[i * 3] = (Math.random() - 0.5) * 600;
+            temp[i * 3] = (Math.random() - 0.5) * 800;
             temp[i * 3 + 1] = (Math.random() - 0.5) * 600;
-            temp[i * 3 + 2] = (Math.random() - 0.5) * 400; // Closer range
+            temp[i * 3 + 2] = (Math.random() - 0.5) * 400;
         }
         return temp;
     }, [count]);
 
     useFrame((state) => {
         if (mesh.current) {
-            mesh.current.rotation.y = state.clock.getElapsedTime() * 0.007;
+            mesh.current.rotation.y = state.clock.getElapsedTime() * 0.005;
         }
     });
+
+    if (!texture) return null; // Don't render until texture is ready
 
     return (
         <points ref={mesh}>
             <bufferGeometry>
-                <bufferAttribute attach="attributes-position" count={particles.length / 3} array={particles} itemSize={3} />
+                <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
             </bufferGeometry>
             <pointsMaterial
                 map={texture}
-                size={8} // Larger for cross
+                size={10}
                 sizeAttenuation={true}
                 transparent
                 depthWrite={false}
-                opacity={0.9}
-                alphaTest={0.01}
-                color="#fff" // Clean white
+                opacity={0.8}
+                color="#ffffff"
             />
         </points>
     );
 }
 
-// --- Component: Milky Way (Volumetric Clouds) ---
+// --- Component: Milky Way ---
 function MilkyWay() {
-    const count = 300;
+    const count = 400;
     const mesh = useRef<THREE.InstancedMesh>(null);
     const texture = useMemo(() => {
         if (typeof document === 'undefined') return new THREE.Texture();
-        // Simple cloud texture via canvas
         const c = document.createElement("canvas");
         c.width = 128; c.height = 128;
         const ctx = c.getContext("2d");
         if (ctx) {
             const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-            grd.addColorStop(0, "rgba(255,255,255,0.4)"); // Brighter core
-            grd.addColorStop(0.5, "rgba(255,255,255,0.1)");
-            grd.addColorStop(1, "rgba(255,255,255,0)");
+            grd.addColorStop(0, "rgba(255,255,255,0.2)");
+            grd.addColorStop(0.6, "rgba(100,120,255,0.05)");
+            grd.addColorStop(1, "rgba(0,0,0,0)");
             ctx.fillStyle = grd;
             ctx.fillRect(0, 0, 128, 128);
         }
         return new THREE.CanvasTexture(c);
     }, []);
 
-    useMemo(() => {
-        const tempObj = new THREE.Object3D();
+    const dummy = useMemo(() => new THREE.Object3D(), []);
+
+    useEffect(() => {
         if (!mesh.current) return;
 
         for (let i = 0; i < count; i++) {
-            // Spiral / Band distribution
-            const t = i / count;
-            const angle = t * Math.PI * 4; // Long spiral
-            const radius = 50 + Math.random() * 100;
+            // Spiral arm shape
+            const angle = i * 0.05;
+            const radius = 50 + i * 0.5;
+            const spread = (Math.random() - 0.5) * 50;
 
-            // Position along a diagonal band
-            const x = (Math.random() - 0.5) * 600;
-            const y = (Math.random() - 0.5) * 100 + x * 0.5; // Slope
-            const z = (Math.random() - 0.5) * 200 - 150; // Background layer
+            const x = Math.cos(angle) * radius + spread;
+            const y = Math.sin(angle) * (radius * 0.5) + spread; // Flattened
+            const z = (Math.random() - 0.5) * 200 - 100;
 
-            tempObj.position.set(x, y, z);
-            tempObj.rotation.z = Math.random() * Math.PI;
-            const scale = 30 + Math.random() * 50;
-            tempObj.scale.set(scale, scale, 1);
-            tempObj.updateMatrix();
-            mesh.current.setMatrixAt(i, tempObj.matrix);
+            dummy.position.set(x, y, z);
+            dummy.rotation.z = Math.random() * Math.PI;
+            const scale = 50 + Math.random() * 50;
+            dummy.scale.set(scale, scale, 1);
+            dummy.updateMatrix();
+            mesh.current.setMatrixAt(i, dummy.matrix);
         }
-    }, []);
+        mesh.current.instanceMatrix.needsUpdate = true;
+    }, [dummy, count]);
 
     useFrame((state) => {
         if (mesh.current) {
-            mesh.current.rotation.z = state.clock.getElapsedTime() * 0.002; // Slow rotation of the galaxy
+            mesh.current.rotation.z = state.clock.getElapsedTime() * 0.001;
         }
     })
 
@@ -220,7 +226,7 @@ function MilkyWay() {
             <meshBasicMaterial
                 map={texture}
                 transparent
-                opacity={0.3} // Accumulative opacity
+                opacity={0.3}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
             />
@@ -228,22 +234,18 @@ function MilkyWay() {
     );
 }
 
-// --- Component: Shooting Stars ---
+// --- Shooting Stars ---
 function ShootingStars() {
     const [trails, setTrails] = useState<{ id: number, startPos: THREE.Vector3, velocity: THREE.Vector3, startTime: number }[]>([]);
     const nextId = useRef(0);
 
     useFrame((state) => {
         const time = state.clock.getElapsedTime();
-
-        // Spawn logic: ~1 every 3-10 seconds
-        if (Math.random() < 0.005) { // Adjust prob for frequency
+        if (Math.random() < 0.01) { // 1% chance per frame (~once per 1.6s)
             const spawnX = (Math.random() - 0.5) * 600;
-            const spawnY = (Math.random() - 0.5) * 400 + 200; // Start high
-
-            const start = new THREE.Vector3(spawnX, spawnY, -50 + Math.random() * 50);
-            // Velocity: down and random side
-            const vel = new THREE.Vector3((Math.random() - 0.5) * 200, -200 - Math.random() * 100, 0);
+            const spawnY = 300;
+            const start = new THREE.Vector3(spawnX, spawnY, -50);
+            const vel = new THREE.Vector3((Math.random() - 0.5) * 100, -300 - Math.random() * 200, 0);
 
             setTrails(prev => [...prev, {
                 id: nextId.current++,
@@ -252,56 +254,50 @@ function ShootingStars() {
                 startTime: time
             }]);
         }
-
-        // Cleanup old trails
-        setTrails(prev => prev.filter(t => time - t.startTime < 1.0)); // 1 sec lifetime
+        setTrails(prev => prev.filter(t => time - t.startTime < 0.8));
     });
 
     return (
         <group>
-            {trails.map(t => (
-                <ShootingStar key={t.id} trail={t} />
-            ))}
+            {trails.map(t => <Trail key={t.id} trail={t} />)}
         </group>
     );
 }
 
-function ShootingStar({ trail }: { trail: any }) {
-    const mesh = useRef<THREE.Mesh>(null);
-
+function Trail({ trail }: { trail: any }) {
+    const ref = useRef<THREE.Mesh>(null);
     useFrame((state) => {
-        const elapsed = state.clock.getElapsedTime() - trail.startTime;
-        if (mesh.current) {
-            // Move head
-            const currentPos = trail.startPos.clone().add(trail.velocity.clone().multiplyScalar(elapsed));
-            mesh.current.position.copy(currentPos);
-
-            // Scale tail (Scale Y stretches it)
-            // Actually, better to use LookAt and scale Z? 
-            // Simple approach: A long thin plane rotated to velocity
+        if (ref.current) {
+            const elapsed = state.clock.getElapsedTime() - trail.startTime;
+            // Move
+            ref.current.position.copy(trail.startPos).addScaledVector(trail.velocity, elapsed);
+            // Orient to velocity
+            // Simple visual: thin long line
+            // Only fading out?
+            const material = ref.current.material as THREE.MeshBasicMaterial;
+            material.opacity = 1.0 - (elapsed / 0.8);
         }
     });
 
-    // Orient logic is complex in simple loop, assume simple line style
-    // Or use a Trail component?
-    // Let's just use a simple glowing bright dot moving fast, visual persistence does the rest + trailing tail mesh?
-
     return (
-        <mesh ref={mesh} position={trail.startPos}>
-            <coneGeometry args={[0.5, 15, 8]} />
-            <meshBasicMaterial color="#aaddff" transparent opacity={0.8} blending={THREE.AdditiveBlending} />
+        <mesh ref={ref}>
+            <coneGeometry args={[0.8, 30, 8]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={1} />
         </mesh>
     );
 }
 
-
-// --- Main Component ---
+// --- MAIN EXPORT ---
 export function StarryBackground() {
     return (
-        <div className="fixed inset-0 w-full h-full z-0 bg-gradient-to-b from-black to-[#090a0f]">
+        // FORCED DIMENSIONS & DEBUG BACKGROUND
+        <div
+            className="fixed top-0 left-0 w-screen h-screen z-0 bg-slate-900 pointer-events-none"
+            style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 0 }}
+        >
             <Canvas camera={{ position: [0, 0, 300], fov: 60 }} gl={{ antialias: false, alpha: true }}>
-                <StarField count={8000} />
-                <CrossStars count={150} />
+                <StarField />
+                <CrossStars />
                 <MilkyWay />
                 <ShootingStars />
             </Canvas>
