@@ -596,7 +596,7 @@ function DayListView({ date, events, goals, onDelete, onUpdate, compact = false 
 
                             {/* Actions */}
                             {!compact && (
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                     {isEditing ? (
                                         <>
                                             <Button size="icon" variant="ghost" className="h-7 w-7 text-green-500 hover:text-green-400 hover:bg-green-500/10" onClick={() => saveEdit(event)}>
@@ -617,10 +617,10 @@ function DayListView({ date, events, goals, onDelete, onUpdate, compact = false 
                                             >
                                                 <Check className="w-4 h-4" />
                                             </Button>
-                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-white" onClick={() => startEdit(event)}>
+                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-300 hover:text-white" onClick={() => startEdit(event)}>
                                                 <Edit2 className="w-4 h-4" />
                                             </Button>
-                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-neon-red hover:bg-neon-red/10" onClick={() => onDelete(event.id)}>
+                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-300 hover:text-neon-red hover:bg-neon-red/10" onClick={() => onDelete(event.id)}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </>
