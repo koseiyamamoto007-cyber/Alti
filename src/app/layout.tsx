@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Alti - Advanced Goal Tracking",
   description: "Elevate your potential with Alti.",
+  manifest: "/manifest.json",
 };
 
 import { Sidebar, MobileHeader } from "@/components/layout/header";
