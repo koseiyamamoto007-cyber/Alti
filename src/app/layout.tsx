@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 };
 
 import { Sidebar, MobileHeader } from "@/components/layout/header";
-
 import { ChatWidget } from "@/components/chat/chat-widget";
+import { AuthSync } from "@/components/auth-sync";
 
 export default function RootLayout({
   children,
@@ -32,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950`}
       >
+        <AuthSync />
         <Sidebar />
         <MobileHeader />
         <div className="pt-16 md:pt-0 md:pl-[300px]">
