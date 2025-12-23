@@ -12,6 +12,7 @@ interface StoreState {
     userId: string | null;
     setUserId: (id: string | null) => void;
     syncWithSupabase: () => Promise<void>;
+    syncLocalToSupabase: () => Promise<void>;
 
     // Actions
     addScheduledEvent: (event: Omit<CalendarEvent, 'id' | 'completedDuration'>) => Promise<void>;
@@ -80,11 +81,11 @@ export const useStore = create<StoreState>()(
 
                 // Fetch Goals
                 const { data: goals } = await supabase.from('goals').select('*');
-                if (goals) set({ goals: goals });
+                if (goals && goals.length > 0) set({ goals: goals });
 
                 // Fetch Events
                 const { data: events } = await supabase.from('events').select('*');
-                if (events) {
+                if (events && events.length > 0) {
                     const mappedEvents = events.map((e: any) => ({
                         id: e.id,
                         title: e.title,
@@ -108,24 +109,109 @@ export const useStore = create<StoreState>()(
 
                 // Fetch Journal, Memo, Scores
                 const { data: journals } = await supabase.from('journal_entries').select('*');
-                if (journals) {
+                if (journals && journals.length > 0) {
                     const map: Record<string, string> = {};
                     journals.forEach((j: any) => map[j.date] = j.content);
                     set({ journalEntries: map });
                 }
 
                 const { data: memos } = await supabase.from('memo_entries').select('*');
-                if (memos) {
+                if (memos && memos.length > 0) {
                     const map: Record<string, string> = {};
                     memos.forEach((m: any) => map[m.date] = m.content);
                     set({ memoEntries: map });
                 }
 
                 const { data: scores } = await supabase.from('daily_scores').select('*');
-                if (scores) {
+                if (scores && scores.length > 0) {
                     const map: Record<string, number> = {};
                     scores.forEach((s: any) => map[s.date] = s.score);
                     set({ dailyScores: map });
+                }
+            },
+
+            syncLocalToSupabase: async () => {
+                const state = get();
+                const { userId, goals, events, journalEntries, memoEntries, dailyScores, mainGoal, mainGoalDeadline, mainGoalStartDate } = state;
+
+                if (!userId) return;
+                console.log("Starting local-to-cloud sync for user:", userId);
+
+                try {
+                    // 1. Settings
+                    if (mainGoal) {
+                        await supabase.from('user_settings').upsert({
+                            user_id: userId,
+                            main_goal: mainGoal,
+                            main_goal_deadline: mainGoalDeadline,
+                            main_goal_start_date: mainGoalStartDate
+                        });
+                    }
+
+                    // 2. Goals
+                    if (goals.length > 0) {
+                        const goalsPayload = goals.map(g => ({
+                            id: g.id,
+                            user_id: userId,
+                            title: g.title,
+                            color: g.color,
+                            icon: g.icon
+                        }));
+                        const { error: gErr } = await supabase.from('goals').upsert(goalsPayload);
+                        if (gErr) console.error("Goals sync error:", gErr);
+                    }
+
+                    // 3. Events
+                    if (events.length > 0) {
+                        const eventsPayload = events.map(e => ({
+                            id: e.id,
+                            user_id: userId,
+                            title: e.title,
+                            start_time: e.startTime,
+                            end_time: e.endTime,
+                            goal_id: e.goalId,
+                            completed_duration: e.completedDuration
+                        }));
+                        const { error: eErr } = await supabase.from('events').upsert(eventsPayload);
+                        if (eErr) console.error("Events sync error:", eErr);
+                    }
+
+                    // 4. Journals
+                    const journalPayload = Object.entries(journalEntries).map(([date, content]) => ({
+                        user_id: userId,
+                        date: date,
+                        content: content
+                    }));
+                    if (journalPayload.length > 0) {
+                        const { error: jErr } = await supabase.from('journal_entries').upsert(journalPayload, { onConflict: 'user_id, date' });
+                        if (jErr) console.error("Journal sync error:", jErr);
+                    }
+
+                    // 5. Memos
+                    const memoPayload = Object.entries(memoEntries).map(([date, content]) => ({
+                        user_id: userId,
+                        date: date,
+                        content: content
+                    }));
+                    if (memoPayload.length > 0) {
+                        const { error: mErr } = await supabase.from('memo_entries').upsert(memoPayload, { onConflict: 'user_id, date' });
+                        if (mErr) console.error("Memo sync error:", mErr);
+                    }
+
+                    // 6. Scores
+                    const scorePayload = Object.entries(dailyScores).map(([date, score]) => ({
+                        user_id: userId,
+                        date: date,
+                        score: score
+                    }));
+                    if (scorePayload.length > 0) {
+                        const { error: sErr } = await supabase.from('daily_scores').upsert(scorePayload, { onConflict: 'user_id, date' });
+                        if (sErr) console.error("Score sync error:", sErr);
+                    }
+
+                    console.log("Local-to-cloud sync complete.");
+                } catch (err) {
+                    console.error("Sync failed:", err);
                 }
             },
 

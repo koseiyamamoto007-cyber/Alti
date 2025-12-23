@@ -7,14 +7,18 @@ import { useStore } from "@/lib/store";
 export function AuthSync() {
     const setUserId = useStore((state) => state.setUserId);
     const syncWithSupabase = useStore((state) => state.syncWithSupabase);
+    const syncLocalToSupabase = useStore((state) => state.syncLocalToSupabase);
 
     useEffect(() => {
         // 1. Check active session immediately
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session?.user) {
                 console.log("AuthSync: Initial session found", session.user.id);
                 setUserId(session.user.id);
-                syncWithSupabase().then(() => console.log("AuthSync: Initial sync complete"));
+                // PUSH local data first, then PULL remote data
+                await syncLocalToSupabase();
+                await syncWithSupabase();
+                console.log("AuthSync: Initial sync sequence complete");
             }
         });
 
@@ -26,19 +30,16 @@ export function AuthSync() {
             if (session?.user) {
                 setUserId(session.user.id);
                 if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                    await syncLocalToSupabase();
                     await syncWithSupabase();
                 }
             } else if (event === 'SIGNED_OUT') {
                 setUserId(null);
-                // Optional: Clear data? 
-                // For now, keep local data or maybe clear to avoid privacy leak?
-                // Given the user wants to see data on *other* devices, clearing on logout makes sense.
-                // But I won't be aggressive so I don't delete unsaved work if network fails.
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [setUserId, syncWithSupabase]);
+    }, [setUserId, syncWithSupabase, syncLocalToSupabase]);
 
     return null; // Renderless component
 }
