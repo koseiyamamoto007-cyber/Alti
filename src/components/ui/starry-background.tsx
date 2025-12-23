@@ -36,7 +36,7 @@ const useCrossTexture = () => {
 };
 
 // --- Component: Dense Star Field (Dots) ---
-function StarField({ count = 6000 }) {
+function StarField({ count = 2500 }) {
     const mesh = useRef<THREE.Points>(null);
 
     // Create geometry data once
@@ -129,7 +129,7 @@ function StarField({ count = 6000 }) {
 }
 
 // --- Component: Cross Stars (Accent) ---
-function CrossStars({ count = 200 }) {
+function CrossStars({ count = 50 }) {
     const mesh = useRef<THREE.Points>(null);
     const texture = useCrossTexture(); // Use hook
 
@@ -226,7 +226,7 @@ function MilkyWay() {
             <meshBasicMaterial
                 map={texture}
                 transparent
-                opacity={0.3}
+                opacity={0.15}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
             />
@@ -290,9 +290,9 @@ function Trail({ trail }: { trail: any }) {
 // --- MAIN EXPORT ---
 export function StarryBackground() {
     return (
-        // FORCED DIMENSIONS & DEBUG BACKGROUND
+        // FORCED DIMENSIONS & GRADIENT BACKGROUND
         <div
-            className="fixed top-0 left-0 w-screen h-screen z-0 bg-slate-900 pointer-events-none"
+            className="fixed top-0 left-0 w-screen h-screen z-0 bg-gradient-to-b from-black to-[#090a0f] pointer-events-none"
             style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 0 }}
         >
             <Canvas camera={{ position: [0, 0, 300], fov: 60 }} gl={{ antialias: false, alpha: true }}>
@@ -301,6 +301,8 @@ export function StarryBackground() {
                 <MilkyWay />
                 <ShootingStars />
             </Canvas>
+            {/* Dark Overlay for Readability */}
+            <div className="absolute inset-0 bg-black/60 z-[1] pointer-events-none" />
         </div>
     );
 }
