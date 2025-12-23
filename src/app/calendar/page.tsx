@@ -151,44 +151,80 @@ export default function CalendarPage() {
                 {/* Top Gradient Line */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-neon-blue via-transparent to-neon-green opacity-50" />
 
-                <header className="p-4 border-b border-white/5 flex justify-between items-center bg-black/40 backdrop-blur-sm z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="md:hidden">
-                            <Button variant="ghost" size="icon" onClick={() => window.location.href = '/'}>
-                                <ChevronLeft className="w-5 h-5" />
-                            </Button>
+                <header className="border-b border-white/5 bg-black/40 backdrop-blur-sm z-10 flex flex-col">
+                    <div className="p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-4 overflow-hidden">
+                            <div className="md:hidden shrink-0">
+                                <Button variant="ghost" size="icon" onClick={() => window.location.href = '/'}>
+                                    <ChevronLeft className="w-5 h-5" />
+                                </Button>
+                            </div>
+                            <h2 className="text-lg font-black tracking-tight uppercase truncate">
+                                {format(currentDate, view === 'day' ? 'MMMM d, yyyy' : (view === 'week' ? "'Week of' MMM d" : 'MMMM yyyy'))}
+                            </h2>
+                            <div className="hidden md:flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
+                                <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} className="h-7 px-3 text-[10px] hover:bg-white/10 font-bold uppercase tracking-wider text-neon-blue">
+                                    Today
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={handleNext} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
-                        <h2 className="text-lg font-black tracking-tight uppercase">
-                            {format(currentDate, view === 'day' ? 'MMMM d, yyyy' : (view === 'week' ? "'Week of' MMM d" : 'MMMM yyyy'))}
-                        </h2>
-                        <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
-                            <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
-                                <ChevronLeft className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} className="h-7 px-3 text-[10px] hover:bg-white/10 font-bold uppercase tracking-wider text-neon-blue">
-                                Today
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={handleNext} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
-                                <ChevronRight className="w-4 h-4" />
+
+                        <div className="flex items-center gap-2 shrink-0">
+                            {/* Mobile Date Nav (Compact) */}
+                            <div className="flex md:hidden items-center bg-white/5 rounded-lg p-1 border border-white/5 mr-2">
+                                <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={handleNext} className="h-7 w-7 hover:bg-white/10 text-muted-foreground hover:text-white">
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+
+                            {/* Mobile Add Button */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleAddEvent}
+                                className="md:hidden h-8 w-8 bg-neon-blue/10 text-neon-blue border border-neon-blue/50 hover:bg-neon-blue hover:text-white"
+                            >
+                                <Plus className="w-5 h-5" />
                             </Button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Mobile Add Button */}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleAddEvent}
-                            className="md:hidden h-8 w-8 bg-neon-blue/10 text-neon-blue border border-neon-blue/50 hover:bg-neon-blue hover:text-white"
-                        >
-                            <Plus className="w-5 h-5" />
-                        </Button>
-
-                        <div className="flex md:hidden bg-white/5 rounded-lg p-1">
-                            <Button variant="ghost" size="sm" onClick={() => setView('day')} className={cn("text-[10px] h-7 px-2 font-bold", view === 'day' && "bg-white/10 text-white")}>DAY</Button>
-                            <Button variant="ghost" size="sm" onClick={() => setView('week')} className={cn("text-[10px] h-7 px-2 font-bold", view === 'week' && "bg-white/10 text-white")}>WEEK</Button>
-                            <Button variant="ghost" size="sm" onClick={() => setView('month')} className={cn("text-[10px] h-7 px-2 font-bold", view === 'month' && "bg-white/10 text-white")}>MONTH</Button>
+                    {/* Mobile View Toggles (Second Row) */}
+                    <div className="px-4 pb-4 md:hidden w-full">
+                        <div className="flex bg-white/5 rounded-lg p-1 w-full border border-white/5">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setView('day')}
+                                className={cn("flex-1 text-[10px] h-7 font-bold transition-all", view === 'day' && "bg-neon-blue text-white shadow-[0_0_10px_rgba(41,98,255,0.4)]")}
+                            >
+                                DAY
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setView('week')}
+                                className={cn("flex-1 text-[10px] h-7 font-bold transition-all", view === 'week' && "bg-neon-blue text-white shadow-[0_0_10px_rgba(41,98,255,0.4)]")}
+                            >
+                                WEEK
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setView('month')}
+                                className={cn("flex-1 text-[10px] h-7 font-bold transition-all", view === 'month' && "bg-neon-blue text-white shadow-[0_0_10px_rgba(41,98,255,0.4)]")}
+                            >
+                                MONTH
+                            </Button>
                         </div>
                     </div>
                 </header>
