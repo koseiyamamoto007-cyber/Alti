@@ -10,19 +10,22 @@ export async function generateAIResponse(message: string) {
     try {
         const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
-        const prompt = `You are an AI assistant for a goal-tracking app called "Alti".
-        Your goal is to help users stay motivated and achieve their goals.
-        Keep your responses concise, encouraging, and helpful.
-        User message: ${message}`;
-
-        // Using gemini-2.5-flash as the latest stable model
+        // Upgrading to gemini-1.5-pro for better reasoning (2.5-pro not yet widely available)
         const result = await genAI.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-pro",
+            config: {
+                temperature: 0.3,
+                systemInstruction: {
+                    parts: [
+                        { text: "あなたは目標達成アプリ『Elevate Pro』の専属AIコーチです。ユーザーに対し、常に具体的で実行可能なアドバイスを行い、励ますようなトーンで対話してください。" }
+                    ]
+                }
+            },
             contents: [
                 {
                     role: "user",
                     parts: [
-                        { text: prompt }
+                        { text: message } // Removing the manual template prompt since we use systemInstruction now
                     ]
                 }
             ]
