@@ -10,9 +10,9 @@ export async function generateAIResponse(message: string) {
     try {
         const genAI = new genai.GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY });
 
-        // Using gemini-2.5-flash due to Pro model quota limits (429)
+        // Using gemini-3.0-flash-exp (Experimental Free Model)
         const result = await genAI.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.0-flash-exp",
             config: {
                 temperature: 0.3,
                 systemInstruction: {
