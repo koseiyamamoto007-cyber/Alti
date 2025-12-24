@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Home, Calendar, Target, PlusCircle, BookOpen, LogIn, LogOut } from "lucide-react";
+import { Menu, Home, Calendar, Target, PlusCircle, BookOpen, LogIn, LogOut, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -56,6 +56,7 @@ export function MobileHeader() {
         { label: "Calendar", href: "/calendar", icon: Calendar },
         { label: "Main Objective", href: "/objective", icon: Target },
         { label: "Journal", href: "/journal", icon: BookOpen },
+        { label: "Pomodoro", href: "/pomodoro", icon: Timer },
         { label: "Task Manager", href: "/goals/new", icon: PlusCircle },
     ];
 
@@ -154,6 +155,7 @@ export function Sidebar() {
         { label: "Calendar", href: "/calendar", icon: Calendar },
         { label: "Main Objective", href: "/objective", icon: Target },
         { label: "Journal", href: "/journal", icon: BookOpen },
+        { label: "Pomodoro", href: "/pomodoro", icon: Timer },
         { label: "Task Manager", href: "/goals/new", icon: PlusCircle },
     ];
 
