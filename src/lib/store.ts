@@ -55,7 +55,12 @@ interface StoreState {
     dailyScores: Record<string, number>;
     setDailyScore: (date: string, score: number) => Promise<void>;
     getDailyScore: (date: string) => number | null;
+    // Realtime
+    subscribeToRealtime: () => void;
+    unsubscribeFromRealtime: () => void;
 }
+
+let realtimeSubscription: any = null;
 
 export const useStore = create<StoreState>()(
     persist(
@@ -115,8 +120,8 @@ export const useStore = create<StoreState>()(
                             icon: g.icon,
                             defaultDuration: g.default_duration || 60, // Fallback
                             description: g.description,
-                            deadline: g.deadline ? new Date(g.deadline) : new Date(),
-                            createdAt: g.created_at ? new Date(g.created_at) : new Date()
+                            deadline: new Date(), // Placeholder as it's missing in DB currently
+                            createdAt: new Date(g.created_at)
                         })) as Goal[]
                     });
                 }
@@ -482,6 +487,114 @@ export const useStore = create<StoreState>()(
                 const percentage = (totalCompleted / goal.defaultDuration) * 100;
                 return Math.min(100, Math.round(percentage));
             },
+
+            subscribeToRealtime: () => {
+                const { userId } = get();
+                if (!userId) return;
+
+                if (realtimeSubscription) return; // Already subscribed
+
+                console.log("Subscribing to Supabase Realtime...");
+
+                realtimeSubscription = supabase
+                    .channel('db-changes')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'goals', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const { eventType, new: newRecord, old: oldRecord } = payload;
+                            set((state) => {
+                                if (eventType === 'DELETE') {
+                                    return { goals: state.goals.filter(g => g.id !== oldRecord.id) };
+                                } else {
+                                    const mappedGoal: Goal = {
+                                        id: newRecord.id,
+                                        title: newRecord.title,
+                                        color: newRecord.color,
+                                        icon: newRecord.icon,
+                                        defaultDuration: newRecord.default_duration || 60,
+                                        description: newRecord.description,
+                                        deadline: newRecord.deadline ? new Date(newRecord.deadline) : new Date(),
+                                        createdAt: newRecord.created_at ? new Date(newRecord.created_at) : new Date()
+                                    };
+
+                                    if (eventType === 'INSERT') {
+                                        // Avoid duplicates if we already have it (e.g. optimistic update)
+                                        if (state.goals.find(g => g.id === mappedGoal.id)) return state;
+                                        return { goals: [...state.goals, mappedGoal] };
+                                    } else if (eventType === 'UPDATE') {
+                                        return { goals: state.goals.map(g => g.id === mappedGoal.id ? mappedGoal : g) };
+                                    }
+                                }
+                                return state;
+                            });
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'events', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const { eventType, new: newRecord, old: oldRecord } = payload;
+                            set((state) => {
+                                if (eventType === 'DELETE') {
+                                    return { events: state.events.filter(e => e.id !== oldRecord.id) };
+                                } else {
+                                    const mappedEvent: CalendarEvent = {
+                                        id: newRecord.id,
+                                        title: newRecord.title,
+                                        startTime: newRecord.start_time,
+                                        endTime: newRecord.end_time,
+                                        goalId: newRecord.goal_id,
+                                        completedDuration: newRecord.completed_duration
+                                    };
+
+                                    if (eventType === 'INSERT') {
+                                        if (state.events.find(e => e.id === mappedEvent.id)) return state;
+                                        return { events: [...state.events, mappedEvent] };
+                                    } else if (eventType === 'UPDATE') {
+                                        return { events: state.events.map(e => e.id === mappedEvent.id ? mappedEvent : e) };
+                                    }
+                                }
+                                return state;
+                            });
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const newRecord = payload.new as any;
+                            if (newRecord) {
+                                set({
+                                    mainGoal: newRecord.main_goal,
+                                    mainGoalDeadline: newRecord.main_goal_deadline,
+                                    mainGoalStartDate: newRecord.main_goal_start_date
+                                });
+                            }
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'daily_scores', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const newRecord = payload.new as any;
+                            if (newRecord) {
+                                set(state => ({
+                                    dailyScores: { ...state.dailyScores, [newRecord.date]: newRecord.score }
+                                }));
+                            }
+                        }
+                    )
+                    .subscribe();
+            },
+
+            unsubscribeFromRealtime: () => {
+                if (realtimeSubscription) {
+                    console.log("Unsubscribing from Realtime...");
+                    supabase.removeChannel(realtimeSubscription);
+                    realtimeSubscription = null;
+                }
+            }
         }),
         {
             name: 'elevate-pro-storage',

@@ -8,6 +8,8 @@ export function AuthSync() {
     const setUserId = useStore((state) => state.setUserId);
     const syncWithSupabase = useStore((state) => state.syncWithSupabase);
     const syncLocalToSupabase = useStore((state) => state.syncLocalToSupabase);
+    const subscribeToRealtime = useStore((state) => state.subscribeToRealtime);
+    const unsubscribeFromRealtime = useStore((state) => state.unsubscribeFromRealtime);
 
     useEffect(() => {
         // 1. Check active session immediately
@@ -18,6 +20,7 @@ export function AuthSync() {
                 // PUSH local data first, then PULL remote data
                 await syncLocalToSupabase();
                 await syncWithSupabase();
+                subscribeToRealtime(); // Start Realtime
                 console.log("AuthSync: Initial sync sequence complete");
             }
         });
@@ -32,14 +35,19 @@ export function AuthSync() {
                 if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                     await syncLocalToSupabase();
                     await syncWithSupabase();
+                    subscribeToRealtime(); // Start Realtime
                 }
             } else if (event === 'SIGNED_OUT') {
                 setUserId(null);
+                unsubscribeFromRealtime(); // Stop Realtime
             }
         });
 
-        return () => subscription.unsubscribe();
-    }, [setUserId, syncWithSupabase, syncLocalToSupabase]);
+        return () => {
+            subscription.unsubscribe();
+            unsubscribeFromRealtime(); // Cleanup
+        };
+    }, [setUserId, syncWithSupabase, syncLocalToSupabase, subscribeToRealtime, unsubscribeFromRealtime]);
 
     return null; // Renderless component
 }
