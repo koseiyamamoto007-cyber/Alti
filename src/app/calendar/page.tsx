@@ -582,10 +582,10 @@ function DayListView({ date, events, goals, onDelete, onUpdate, compact = false 
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono mb-1">
-                                        <Clock className="w-3 h-3" />
-                                        <span>{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</span>
-                                        <span className="text-zinc-500">({duration}m)</span>
+                                    <div className="flex items-center gap-2 text-xs text-zinc-100 font-bold font-mono mb-1">
+                                        <Clock className="w-3 h-3 text-neon-blue" />
+                                        <span className="drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</span>
+                                        <span className="text-zinc-400 font-medium">({duration}m)</span>
                                     </div>
                                 )}
 
