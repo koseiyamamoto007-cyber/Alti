@@ -115,8 +115,8 @@ export const useStore = create<StoreState>()(
                             icon: g.icon,
                             defaultDuration: g.default_duration || 60, // Fallback
                             description: g.description,
-                            deadline: new Date(), // Placeholder as it's missing in DB currently
-                            createdAt: new Date(g.created_at)
+                            deadline: g.deadline ? new Date(g.deadline) : new Date(),
+                            createdAt: g.created_at ? new Date(g.created_at) : new Date()
                         })) as Goal[]
                     });
                 }
