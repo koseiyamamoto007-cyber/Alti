@@ -12,7 +12,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 
 const formSchema = z.object({
     title: z.string().min(2, { message: "Title must be at least 2 characters." }),
@@ -203,7 +202,7 @@ export default function NewGoalPage() {
 
                             <div className="flex gap-4">
                                 <Button type="submit" className={cn("flex-1 font-bold py-3 text-white", editingId ? "bg-green-600 hover:bg-green-500" : "bg-indigo-600 hover:bg-indigo-500")}>
-                                    {editingId ? "Update Task" : "Create Task"}
+                                    {editingId ? "Update Task (v2)" : "Create Task"}
                                 </Button>
                                 {editingId && (
                                     <Button type="button" variant="outline" onClick={cancelEditing} className="border-slate-700 text-slate-400 hover:text-white">
@@ -231,7 +230,6 @@ export default function NewGoalPage() {
                                     <tr>
                                         <th className="px-4 py-3 rounded-l-lg">Task Name</th>
                                         <th className="px-4 py-3">Duration</th>
-                                        <th className="px-4 py-3">Registered</th>
                                         <th className="px-4 py-3">Color</th>
                                         <th className="px-4 py-3 rounded-r-lg text-right">Action</th>
                                     </tr>
@@ -241,9 +239,6 @@ export default function NewGoalPage() {
                                         <tr key={goal.id} className={cn("border-b border-slate-800/50 hover:bg-slate-800/30", editingId === goal.id ? "bg-slate-800/50" : "")}>
                                             <td className="px-4 py-3 font-medium">{goal.title}</td>
                                             <td className="px-4 py-3 min-w-[120px]">{formatDuration(goal.defaultDuration)}</td>
-                                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">
-                                                {goal.createdAt ? format(new Date(goal.createdAt), 'yyyy/MM/dd HH:mm') : '-'}
-                                            </td>
                                             <td className="px-4 py-3">
                                                 <div className={cn("w-4 h-4 rounded-full", goal.color)} />
                                             </td>

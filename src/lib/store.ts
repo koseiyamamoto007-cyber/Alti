@@ -381,17 +381,27 @@ export const useStore = create<StoreState>()(
                 if (userId) {
                     const dbUpdates: any = { ...updates };
 
-                    if (updates.defaultDuration) {
+                    // FIX: Check against undefined, not falsy (to allow 0 if needed, though unlikely for duration)
+                    if (updates.defaultDuration !== undefined) {
                         dbUpdates.default_duration = updates.defaultDuration;
                         delete dbUpdates.defaultDuration;
                     }
-                    if (updates.createdAt) {
+                    if (updates.createdAt !== undefined) {
                         dbUpdates.created_at = updates.createdAt;
                         delete dbUpdates.createdAt;
                     }
 
-                    console.log("updateGoal: Updating Supabase", { id, dbUpdates });
-                    const { error } = await supabase.from('goals').update(dbUpdates).eq('id', id);
+                    console.log("updateGoal: PAYLOAD PREPARED", { id, original: updates, payload: dbUpdates });
+
+                    // Add .select() to verify the update actually happened and returned data matches
+                    const { data, error } = await supabase
+                        .from('goals')
+                        .update(dbUpdates)
+                        .eq('id', id)
+                        .select();
+
+                    console.log("updateGoal: SUPABASE RESPONSE", { data, error });
+
                     if (error) console.error("updateGoal: Supabase error", error);
                 }
             },
@@ -504,33 +514,54 @@ export const useStore = create<StoreState>()(
                     .on(
                         'postgres_changes',
                         { event: '*', schema: 'public', table: 'goals', filter: `user_id=eq.${userId}` },
-                        (payload) => {
+                        async (payload) => {
                             const { eventType, new: newRecord, old: oldRecord } = payload;
-                            set((state) => {
-                                if (eventType === 'DELETE') {
-                                    return { goals: state.goals.filter(g => g.id !== oldRecord.id) };
-                                } else {
+
+                            if (eventType === 'DELETE') {
+                                set((state) => ({ goals: state.goals.filter(g => g.id !== oldRecord.id) }));
+                            } else {
+                                // RELIABILITY FIX: Fetch fresh data from DB instead of trusting Realtime payload
+                                // This ensures we get all columns (default_duration) correctly.
+                                const { data: freshGoal, error } = await supabase
+                                    .from('goals')
+                                    .select('*, default_duration')
+                                    .eq('id', newRecord.id)
+                                    .single();
+
+                                if (freshGoal) {
+                                    const existingGoal = get().goals.find(g => g.id === newRecord.id);
+
+                                    // DEBUG LOGGING
+                                    console.log("Realtime Refetch Logic:", {
+                                        fetched: freshGoal.default_duration,
+                                        existing: existingGoal?.defaultDuration,
+                                        willSetTo: freshGoal.default_duration ?? existingGoal?.defaultDuration ?? 60
+                                    });
+
                                     const mappedGoal: Goal = {
-                                        id: newRecord.id,
-                                        title: newRecord.title,
-                                        color: newRecord.color,
-                                        icon: newRecord.icon,
-                                        defaultDuration: newRecord.default_duration || 60,
-                                        description: newRecord.description,
-                                        deadline: newRecord.deadline ? new Date(newRecord.deadline) : new Date(),
-                                        createdAt: newRecord.created_at ? new Date(newRecord.created_at) : new Date()
+                                        id: freshGoal.id,
+                                        title: freshGoal.title,
+                                        color: freshGoal.color,
+                                        icon: freshGoal.icon,
+                                        // DEFENSIVE FIX: If verify fetch fails to see column, keep existing "Correct" value.
+                                        defaultDuration: freshGoal.default_duration ?? existingGoal?.defaultDuration ?? 60,
+                                        description: freshGoal.description,
+                                        deadline: freshGoal.deadline ? new Date(freshGoal.deadline) : new Date(),
+                                        createdAt: freshGoal.created_at ? new Date(freshGoal.created_at) : new Date()
                                     };
 
-                                    if (eventType === 'INSERT') {
-                                        // Avoid duplicates if we already have it (e.g. optimistic update)
-                                        if (state.goals.find(g => g.id === mappedGoal.id)) return state;
-                                        return { goals: [...state.goals, mappedGoal] };
-                                    } else if (eventType === 'UPDATE') {
-                                        return { goals: state.goals.map(g => g.id === mappedGoal.id ? mappedGoal : g) };
-                                    }
+                                    set((state) => {
+                                        if (eventType === 'INSERT') {
+                                            if (state.goals.find(g => g.id === mappedGoal.id)) return state;
+                                            return { goals: [...state.goals, mappedGoal] };
+                                        } else { // UPDATE
+                                            return { goals: state.goals.map(g => g.id === mappedGoal.id ? mappedGoal : g) };
+                                        }
+                                    });
+                                } else {
+                                    console.error("Realtime: Failed to refetch goal", error);
                                 }
-                                return state;
-                            });
+                            }
                         }
                     )
                     .on(

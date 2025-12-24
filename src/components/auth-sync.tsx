@@ -7,7 +7,6 @@ import { useStore } from "@/lib/store";
 export function AuthSync() {
     const setUserId = useStore((state) => state.setUserId);
     const syncWithSupabase = useStore((state) => state.syncWithSupabase);
-    const syncLocalToSupabase = useStore((state) => state.syncLocalToSupabase);
     const subscribeToRealtime = useStore((state) => state.subscribeToRealtime);
     const unsubscribeFromRealtime = useStore((state) => state.unsubscribeFromRealtime);
 
@@ -17,8 +16,7 @@ export function AuthSync() {
             if (session?.user) {
                 console.log("AuthSync: Initial session found", session.user.id);
                 setUserId(session.user.id);
-                // PUSH local data first, then PULL remote data
-                await syncLocalToSupabase();
+                // PULL remote data (Server Authority)
                 await syncWithSupabase();
                 subscribeToRealtime(); // Start Realtime
                 console.log("AuthSync: Initial sync sequence complete");
@@ -33,7 +31,7 @@ export function AuthSync() {
             if (session?.user) {
                 setUserId(session.user.id);
                 if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                    await syncLocalToSupabase();
+                    // PULL only. Do not push stale local data.
                     await syncWithSupabase();
                     subscribeToRealtime(); // Start Realtime
                 }
@@ -47,7 +45,7 @@ export function AuthSync() {
             subscription.unsubscribe();
             unsubscribeFromRealtime(); // Cleanup
         };
-    }, [setUserId, syncWithSupabase, syncLocalToSupabase, subscribeToRealtime, unsubscribeFromRealtime]);
+    }, [setUserId, syncWithSupabase, subscribeToRealtime, unsubscribeFromRealtime]);
 
     return null; // Renderless component
 }

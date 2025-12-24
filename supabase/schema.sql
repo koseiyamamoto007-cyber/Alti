@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS goals (
     title TEXT NOT NULL,
     color TEXT,
     icon TEXT,
+    default_duration INTEGER DEFAULT 60,
+    description TEXT,
+    deadline TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
