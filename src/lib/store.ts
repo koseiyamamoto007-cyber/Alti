@@ -175,92 +175,7 @@ export const useStore = create<StoreState>()(
             },
 
             syncLocalToSupabase: async () => {
-                const state = get();
-                const { userId, goals, events, journalEntries, memoEntries, dailyScores, mainGoal, mainGoalDeadline, mainGoalStartDate } = state;
-
-                if (!userId) return;
-                console.log("Starting local-to-cloud sync for user:", userId);
-
-                try {
-                    // 1. Settings
-                    if (mainGoal) {
-                        await supabase.from('user_settings').upsert({
-                            user_id: userId,
-                            main_goal: mainGoal,
-                            main_goal_deadline: mainGoalDeadline,
-                            main_goal_start_date: mainGoalStartDate
-                        });
-                    }
-
-                    // 2. Goals
-                    if (goals.length > 0) {
-                        const goalsPayload = goals.map(g => ({
-                            id: g.id,
-                            user_id: userId,
-                            title: g.title,
-                            color: g.color,
-                            icon: g.icon,
-                            default_duration: g.defaultDuration,
-                            description: g.description,
-                            deadline: g.deadline,
-                            created_at: g.createdAt
-                        }));
-                        const { error: gErr } = await supabase.from('goals').upsert(goalsPayload);
-                        if (gErr) console.error("Goals sync error:", gErr);
-                    }
-
-                    // 3. Events
-                    if (events.length > 0) {
-                        const eventsPayload = events.map(e => ({
-                            id: e.id,
-                            user_id: userId,
-                            title: e.title,
-                            start_time: e.startTime,
-                            end_time: e.endTime,
-                            goal_id: e.goalId,
-                            completed_duration: e.completedDuration
-                        }));
-                        const { error: eErr } = await supabase.from('events').upsert(eventsPayload);
-                        if (eErr) console.error("Events sync error:", eErr);
-                    }
-
-                    // 4. Journals
-                    const journalPayload = Object.entries(journalEntries).map(([date, content]) => ({
-                        user_id: userId,
-                        date: date,
-                        content: content
-                    }));
-                    if (journalPayload.length > 0) {
-                        const { error: jErr } = await supabase.from('journal_entries').upsert(journalPayload, { onConflict: 'user_id, date' });
-                        if (jErr) console.error("Journal sync error:", jErr);
-                    }
-
-                    // 5. Memos
-                    const memoPayload = Object.entries(memoEntries).map(([date, content]) => ({
-                        user_id: userId,
-                        date: date,
-                        content: content
-                    }));
-                    if (memoPayload.length > 0) {
-                        const { error: mErr } = await supabase.from('memo_entries').upsert(memoPayload, { onConflict: 'user_id, date' });
-                        if (mErr) console.error("Memo sync error:", mErr);
-                    }
-
-                    // 6. Scores
-                    const scorePayload = Object.entries(dailyScores).map(([date, score]) => ({
-                        user_id: userId,
-                        date: date,
-                        score: score
-                    }));
-                    if (scorePayload.length > 0) {
-                        const { error: sErr } = await supabase.from('daily_scores').upsert(scorePayload, { onConflict: 'user_id, date' });
-                        if (sErr) console.error("Score sync error:", sErr);
-                    }
-
-                    console.log("Local-to-cloud sync complete.");
-                } catch (err) {
-                    console.error("Sync failed:", err);
-                }
+                console.warn("syncLocalToSupabase: Disabled to prevent overwrite.");
             },
 
             setMainGoal: async (goal) => {
@@ -391,16 +306,12 @@ export const useStore = create<StoreState>()(
                         delete dbUpdates.createdAt;
                     }
 
-                    console.log("updateGoal: PAYLOAD PREPARED", { id, original: updates, payload: dbUpdates });
-
                     // Add .select() to verify the update actually happened and returned data matches
                     const { data, error } = await supabase
                         .from('goals')
                         .update(dbUpdates)
                         .eq('id', id)
                         .select();
-
-                    console.log("updateGoal: SUPABASE RESPONSE", { data, error });
 
                     if (error) console.error("updateGoal: Supabase error", error);
                 }
@@ -530,13 +441,6 @@ export const useStore = create<StoreState>()(
 
                                 if (freshGoal) {
                                     const existingGoal = get().goals.find(g => g.id === newRecord.id);
-
-                                    // DEBUG LOGGING
-                                    console.log("Realtime Refetch Logic:", {
-                                        fetched: freshGoal.default_duration,
-                                        existing: existingGoal?.defaultDuration,
-                                        willSetTo: freshGoal.default_duration ?? existingGoal?.defaultDuration ?? 60
-                                    });
 
                                     const mappedGoal: Goal = {
                                         id: freshGoal.id,

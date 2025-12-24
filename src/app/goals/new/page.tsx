@@ -202,7 +202,7 @@ export default function NewGoalPage() {
 
                             <div className="flex gap-4">
                                 <Button type="submit" className={cn("flex-1 font-bold py-3 text-white", editingId ? "bg-green-600 hover:bg-green-500" : "bg-indigo-600 hover:bg-indigo-500")}>
-                                    {editingId ? "Update Task (v2)" : "Create Task"}
+                                    {editingId ? "Update Task" : "Create Task"}
                                 </Button>
                                 {editingId && (
                                     <Button type="button" variant="outline" onClick={cancelEditing} className="border-slate-700 text-slate-400 hover:text-white">

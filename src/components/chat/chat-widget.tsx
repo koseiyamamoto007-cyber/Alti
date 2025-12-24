@@ -84,7 +84,7 @@ export function ChatWidget() {
                         className="bg-neon-blue/20 backdrop-blur-md border border-neon-blue text-white px-6 py-3 rounded-xl rounded-br-none shadow-[0_0_20px_rgba(41,98,255,0.6)] mr-2 mb-2"
                     >
                         <p className="text-sm font-black tracking-widest text-white drop-shadow-[0_0_10px_rgba(41,98,255,1)] animate-pulse uppercase">
-                            Never GIVE UP
+                            Never GIVE UP 🔥
                         </p>
                     </motion.div>
                 )}
