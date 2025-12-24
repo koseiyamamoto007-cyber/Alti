@@ -85,7 +85,8 @@ export const useStore = create<StoreState>()(
                 if (!userId) return;
 
                 // Fetch Goals
-                const { data: goals } = await supabase.from('goals').select('*');
+                const { data: goals } = await supabase.from('goals').select('*, default_duration');
+                console.log("Fetched goals from Supabase:", goals);
                 if (goals && goals.length > 0) {
                     const mappedGoals = goals.map((g: any) => ({
                         id: g.id,
@@ -389,7 +390,9 @@ export const useStore = create<StoreState>()(
                         delete dbUpdates.createdAt;
                     }
 
-                    await supabase.from('goals').update(dbUpdates).eq('id', id);
+                    console.log("updateGoal: Updating Supabase", { id, dbUpdates });
+                    const { error } = await supabase.from('goals').update(dbUpdates).eq('id', id);
+                    if (error) console.error("updateGoal: Supabase error", error);
                 }
             },
 
