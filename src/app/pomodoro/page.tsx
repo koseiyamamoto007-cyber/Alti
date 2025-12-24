@@ -1,86 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { usePomodoro, MODES } from "@/context/pomodoro-context";
 import { StarryBackground } from "@/components/ui/starry-background";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Volume2, VolumeX, CheckCircle2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 type TimerMode = 'focus' | 'short' | 'long';
 
-const MODES: Record<TimerMode, { label: string; minutes: number; color: string }> = {
-    focus: { label: 'Focus', minutes: 25, color: 'text-neon-blue' },
-    short: { label: 'Short Break', minutes: 5, color: 'text-neon-green' },
-    long: { label: 'Long Break', minutes: 15, color: 'text-neon-purple' }
-};
-
 export default function PomodoroPage() {
-    const [mode, setMode] = useState<TimerMode>('focus');
-    const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
-    const [isActive, setIsActive] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(true);
-
-    // Audio ref for the beep sound
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    // Initialize audio
-    useEffect(() => {
-        audioRef.current = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-        return () => {
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
-            }
-        };
-    }, []);
-
-    // Timer Logic
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
-            }, 1000);
-        } else if (timeLeft === 0 && isActive) {
-            setIsActive(false);
-            if (soundEnabled && audioRef.current) {
-                audioRef.current.play().catch(e => console.error("Audio play failed:", e));
-            }
-            // Optional: Notification permission check could go here
-            if (Notification.permission === "granted") {
-                new Notification("Time's up!", { body: `${MODES[mode].label} session completed.` });
-            }
-        }
-
-        return () => clearInterval(interval);
-    }, [isActive, timeLeft, mode, soundEnabled]);
-
-    // Update document title
-    useEffect(() => {
-        const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-        const seconds = (timeLeft % 60).toString().padStart(2, '0');
-        document.title = `${minutes}:${seconds} - ${MODES[mode].label}`;
-
-        return () => {
-            document.title = "Alti - Advanced Goal Tracking";
-        };
-    }, [timeLeft, mode]);
-
-    // Reset when mode changes
-    const switchMode = (newMode: TimerMode) => {
-        setMode(newMode);
-        setIsActive(false);
-        setTimeLeft(MODES[newMode].minutes * 60);
-    };
-
-    const toggleTimer = () => setIsActive(!isActive);
-
-    const resetTimer = () => {
-        setIsActive(false);
-        setTimeLeft(MODES[mode].minutes * 60);
-    };
+    const {
+        mode,
+        timeLeft,
+        isActive,
+        soundEnabled,
+        switchMode,
+        toggleTimer,
+        resetTimer,
+        toggleSound
+    } = usePomodoro();
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -172,7 +111,7 @@ export default function PomodoroPage() {
                         <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => setSoundEnabled(!soundEnabled)}
+                            onClick={toggleSound}
                             className={cn(
                                 "w-12 h-12 rounded-full border border-white/10 hover:bg-white/10 transition-all",
                                 soundEnabled ? "text-neon-blue hover:text-white" : "text-muted-foreground hover:text-white"

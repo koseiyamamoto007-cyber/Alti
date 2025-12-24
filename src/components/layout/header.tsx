@@ -7,6 +7,7 @@ import { Menu, Home, Calendar, Target, PlusCircle, BookOpen, LogIn, LogOut, Time
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import { usePomodoro } from "@/context/pomodoro-context";
 import {
     Sheet,
     SheetContent,
@@ -21,6 +22,11 @@ export function MobileHeader() {
     const userId = useStore(state => state.userId);
     const setUserId = useStore(state => state.setUserId);
     const syncWithSupabase = useStore(state => state.syncWithSupabase);
+
+    // Pomodoro State
+    const { isActive, timeLeft } = usePomodoro();
+    const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const seconds = (timeLeft % 60).toString().padStart(2, '0');
 
     useEffect(() => {
         // Check session on mount
@@ -56,7 +62,17 @@ export function MobileHeader() {
         { label: "Calendar", href: "/calendar", icon: Calendar },
         { label: "Main Objective", href: "/objective", icon: Target },
         { label: "Journal", href: "/journal", icon: BookOpen },
-        { label: "Pomodoro", href: "/pomodoro", icon: Timer },
+        {
+            label: "Pomodoro",
+            href: "/pomodoro",
+            icon: Timer,
+            extra: isActive ? (
+                <div className="ml-auto flex items-center gap-2 text-xs font-mono text-neon-blue animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-neon-blue" />
+                    {minutes}:{seconds}
+                </div>
+            ) : null
+        },
         { label: "Task Manager", href: "/goals/new", icon: PlusCircle },
     ];
 
@@ -112,6 +128,8 @@ export function MobileHeader() {
                                 >
                                     <item.icon className="w-5 h-5 group-hover:text-indigo-400" />
                                     <span className="font-medium">{item.label}</span>
+                                    {/* @ts-ignore */}
+                                    {item.extra}
                                 </Link>
                             </SheetClose>
                         ))}
@@ -145,6 +163,11 @@ export function Sidebar() {
     const router = useRouter();
     const userId = useStore(state => state.userId);
 
+    // Pomodoro State
+    const { isActive, timeLeft } = usePomodoro();
+    const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const seconds = (timeLeft % 60).toString().padStart(2, '0');
+
     const handleLogout = async () => {
         await supabase.auth.signOut();
         router.push("/login");
@@ -155,7 +178,17 @@ export function Sidebar() {
         { label: "Calendar", href: "/calendar", icon: Calendar },
         { label: "Main Objective", href: "/objective", icon: Target },
         { label: "Journal", href: "/journal", icon: BookOpen },
-        { label: "Pomodoro", href: "/pomodoro", icon: Timer },
+        {
+            label: "Pomodoro",
+            href: "/pomodoro",
+            icon: Timer,
+            extra: isActive ? (
+                <div className="ml-auto flex items-center gap-2 text-xs font-mono text-neon-blue">
+                    <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-pulse" />
+                    {minutes}:{seconds}
+                </div>
+            ) : null
+        },
         { label: "Task Manager", href: "/goals/new", icon: PlusCircle },
     ];
 
@@ -190,6 +223,8 @@ export function Sidebar() {
                     >
                         <item.icon className="w-5 h-5 group-hover:text-neon-blue transition-colors" />
                         <span className="font-medium tracking-wide">{item.label}</span>
+                        {/* @ts-ignore */}
+                        {item.extra}
                     </Link>
                 ))}
             </nav>
