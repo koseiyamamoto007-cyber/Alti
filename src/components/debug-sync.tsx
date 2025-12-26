@@ -12,7 +12,34 @@ export function DebugSync() {
     const [status, setStatus] = useState("Idle");
     const [lastError, setLastError] = useState<string | null>(null);
 
-    // ... (rest of component)
+    const handleTestWrite = async () => {
+        setStatus("Testing Write...");
+        setLastError(null);
+
+        if (!userId) {
+            setStatus("Failed: No User ID");
+            return;
+        }
+
+        try {
+            const testDate = "2025-01-01";
+            const { error } = await supabase.from('daily_scores').upsert(
+                { user_id: userId, date: testDate, score: 999 },
+                { onConflict: 'user_id, date' }
+            );
+
+            if (error) {
+                setStatus("Write Failed");
+                setLastError(error.message);
+                console.error("Debug write error:", error);
+            } else {
+                setStatus("Write Success! (Check DB for 2025-01-01)");
+            }
+        } catch (e: any) {
+            setStatus("Exception");
+            setLastError(e.message);
+        }
+    };
 
     return (
         <div className="fixed top-20 left-4 z-50 bg-black/80 border border-neon-red p-4 rounded-lg text-xs font-mono text-white max-w-[200px]">
@@ -24,19 +51,14 @@ export function DebugSync() {
                 <p>Write: {status}</p>
                 {lastError && <p className="text-red-500 break-words">{lastError}</p>}
             </div>
-            {/* ... buttons ... */}
+            <Button
+                onClick={handleTestWrite}
+                size="sm"
+                variant="destructive"
+                className="w-full h-6 text-[10px]"
+            >
+                Test DB Write
+            </Button>
         </div>
-    );
-}
-
-<Button
-    onClick={handleTestWrite}
-    size="sm"
-    variant="destructive"
-    className="w-full h-6 text-[10px]"
->
-    Test DB Write
-</Button>
-        </div >
     );
 }
