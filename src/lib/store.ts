@@ -513,7 +513,7 @@ export const useStore = create<StoreState>()(
                     )
                     .on(
                         'postgres_changes',
-                        { event: '*', schema: 'public', table: 'daily_scores', filter: `user_id=eq.${userId}` },
+                        { event: '*', schema: 'public', table: 'daily_scores' },
                         (payload) => {
                             const newRecord = payload.new as any;
                             if (newRecord) {
@@ -525,7 +525,7 @@ export const useStore = create<StoreState>()(
                     )
                     .on(
                         'postgres_changes',
-                        { event: '*', schema: 'public', table: 'journal_entries', filter: `user_id=eq.${userId}` },
+                        { event: '*', schema: 'public', table: 'journal_entries' },
                         (payload) => {
                             const newRecord = payload.new as any;
                             if (newRecord) {
@@ -537,7 +537,7 @@ export const useStore = create<StoreState>()(
                     )
                     .on(
                         'postgres_changes',
-                        { event: '*', schema: 'public', table: 'memo_entries', filter: `user_id=eq.${userId}` },
+                        { event: '*', schema: 'public', table: 'memo_entries' },
                         (payload) => {
                             const newRecord = payload.new as any;
                             if (newRecord) {
@@ -547,7 +547,9 @@ export const useStore = create<StoreState>()(
                             }
                         }
                     )
-                    .subscribe();
+                    .subscribe((status) => {
+                        console.log("Realtime subscription status:", status);
+                    });
             },
 
             unsubscribeFromRealtime: () => {
