@@ -523,6 +523,30 @@ export const useStore = create<StoreState>()(
                             }
                         }
                     )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'journal_entries', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const newRecord = payload.new as any;
+                            if (newRecord) {
+                                set(state => ({
+                                    journalEntries: { ...state.journalEntries, [newRecord.date]: newRecord.content }
+                                }));
+                            }
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'memo_entries', filter: `user_id=eq.${userId}` },
+                        (payload) => {
+                            const newRecord = payload.new as any;
+                            if (newRecord) {
+                                set(state => ({
+                                    memoEntries: { ...state.memoEntries, [newRecord.date]: newRecord.content }
+                                }));
+                            }
+                        }
+                    )
                     .subscribe();
             },
 
