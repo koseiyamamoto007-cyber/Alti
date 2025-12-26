@@ -333,13 +333,13 @@ export const useStore = create<StoreState>()(
                 set(state => ({ journalEntries: { ...state.journalEntries, [date]: content } }));
                 const { userId } = get();
                 if (userId) {
-                    // Check existing
-                    const { data } = await supabase.from('journal_entries').select('id').eq('user_id', userId).eq('date', date).single();
-                    if (data) {
-                        await supabase.from('journal_entries').update({ content }).eq('id', data.id);
-                    } else {
-                        await supabase.from('journal_entries').insert({ user_id: userId, date, content });
-                    }
+                    const { error } = await supabase.from('journal_entries').upsert(
+                        { user_id: userId, date, content },
+                        { onConflict: 'user_id, date' }
+                    );
+                    if (error) console.error("Failed to save journal:", error);
+                } else {
+                    console.error("Save failed: No User ID");
                 }
             },
             getJournalEntry: (date) => get().journalEntries[date] ?? "",
@@ -348,12 +348,13 @@ export const useStore = create<StoreState>()(
                 set(state => ({ memoEntries: { ...state.memoEntries, [date]: content } }));
                 const { userId } = get();
                 if (userId) {
-                    const { data } = await supabase.from('memo_entries').select('id').eq('user_id', userId).eq('date', date).single();
-                    if (data) {
-                        await supabase.from('memo_entries').update({ content }).eq('id', data.id);
-                    } else {
-                        await supabase.from('memo_entries').insert({ user_id: userId, date, content });
-                    }
+                    const { error } = await supabase.from('memo_entries').upsert(
+                        { user_id: userId, date, content },
+                        { onConflict: 'user_id, date' }
+                    );
+                    if (error) console.error("Failed to save memo:", error);
+                } else {
+                    console.error("Save failed: No User ID");
                 }
             },
             getMemoEntry: (date) => get().memoEntries[date] ?? "",
@@ -362,12 +363,13 @@ export const useStore = create<StoreState>()(
                 set(state => ({ dailyScores: { ...state.dailyScores, [date]: score } }));
                 const { userId } = get();
                 if (userId) {
-                    const { data } = await supabase.from('daily_scores').select('id').eq('user_id', userId).eq('date', date).single();
-                    if (data) {
-                        await supabase.from('daily_scores').update({ score }).eq('id', data.id);
-                    } else {
-                        await supabase.from('daily_scores').insert({ user_id: userId, date, score });
-                    }
+                    const { error } = await supabase.from('daily_scores').upsert(
+                        { user_id: userId, date, score },
+                        { onConflict: 'user_id, date' }
+                    );
+                    if (error) console.error("Failed to save daily score:", error);
+                } else {
+                    console.error("Save failed: No User ID");
                 }
             },
             getDailyScore: (date) => get().dailyScores[date] ?? null,
