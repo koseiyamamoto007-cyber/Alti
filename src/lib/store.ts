@@ -56,6 +56,7 @@ interface StoreState {
     setDailyScore: (date: string, score: number) => Promise<void>;
     getDailyScore: (date: string) => number | null;
     // Realtime
+    realtimeStatus: string;
     subscribeToRealtime: () => void;
     unsubscribeFromRealtime: () => void;
 }
@@ -78,7 +79,16 @@ export const useStore = create<StoreState>()(
             memoEntries: {},
             dailyScores: {},
 
+            // Realtime
+            realtimeStatus: "Idle",
+
             setUserId: (id) => set({ userId: id }),
+
+            // ... (syncWithSupabase and others remain, skipping to subscribeToRealtime modification)
+
+            // Note: I need to target the subscribeToRealtime function block specifically or re-state the interface.
+            // Since replace_file_content works on blocks, I will target the interface first, then the implementation.
+
 
             syncWithSupabase: async () => {
                 const { userId } = get();
@@ -551,6 +561,7 @@ export const useStore = create<StoreState>()(
                     )
                     .subscribe((status) => {
                         console.log("Realtime subscription status:", status);
+                        set({ realtimeStatus: status });
                     });
             },
 
@@ -559,6 +570,7 @@ export const useStore = create<StoreState>()(
                     console.log("Unsubscribing from Realtime...");
                     supabase.removeChannel(realtimeSubscription);
                     realtimeSubscription = null;
+                    set({ realtimeStatus: "Disconnected" });
                 }
             }
         }),
