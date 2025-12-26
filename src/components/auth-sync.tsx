@@ -41,9 +41,19 @@ export function AuthSync() {
             }
         });
 
+        // 3. Fallback Polling (Every 5 seconds) to guarantee sync even if Realtime fails
+        const pollingInterval = setInterval(() => {
+            const currentUserId = useStore.getState().userId;
+            if (currentUserId) {
+                console.log("AuthSync: Polling for updates...");
+                syncWithSupabase();
+            }
+        }, 5000);
+
         return () => {
             subscription.unsubscribe();
             unsubscribeFromRealtime(); // Cleanup
+            clearInterval(pollingInterval);
         };
     }, [setUserId, syncWithSupabase, subscribeToRealtime, unsubscribeFromRealtime]);
 

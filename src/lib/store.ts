@@ -57,6 +57,7 @@ interface StoreState {
     getDailyScore: (date: string) => number | null;
     // Realtime
     realtimeStatus: string;
+    lastEventTime: string | null;
     subscribeToRealtime: () => void;
     unsubscribeFromRealtime: () => void;
 }
@@ -81,6 +82,7 @@ export const useStore = create<StoreState>()(
 
             // Realtime
             realtimeStatus: "Idle",
+            lastEventTime: null,
 
             setUserId: (id) => set({ userId: id }),
 
@@ -528,6 +530,8 @@ export const useStore = create<StoreState>()(
                         { event: '*', schema: 'public', table: 'daily_scores' },
                         (payload) => {
                             const newRecord = payload.new as any;
+                            // Just log the event time for now, assuming upsert/polling handles the data integrity primarily if this fails
+                            set({ lastEventTime: new Date().toLocaleTimeString() });
                             if (newRecord) {
                                 set(state => ({
                                     dailyScores: { ...state.dailyScores, [newRecord.date]: newRecord.score }
@@ -540,6 +544,7 @@ export const useStore = create<StoreState>()(
                         { event: '*', schema: 'public', table: 'journal_entries' },
                         (payload) => {
                             const newRecord = payload.new as any;
+                            set({ lastEventTime: new Date().toLocaleTimeString() });
                             if (newRecord) {
                                 set(state => ({
                                     journalEntries: { ...state.journalEntries, [newRecord.date]: newRecord.content }
@@ -552,6 +557,7 @@ export const useStore = create<StoreState>()(
                         { event: '*', schema: 'public', table: 'memo_entries' },
                         (payload) => {
                             const newRecord = payload.new as any;
+                            set({ lastEventTime: new Date().toLocaleTimeString() });
                             if (newRecord) {
                                 set(state => ({
                                     memoEntries: { ...state.memoEntries, [newRecord.date]: newRecord.content }
