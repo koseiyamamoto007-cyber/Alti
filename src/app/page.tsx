@@ -212,8 +212,8 @@ export default function DashboardPage() {
           >
             SEED_DATA ({currentDate.toLocaleDateString()})
           </Button>
+          <p className="text-[10px] text-zinc-700 text-center mt-4 font-mono">v1.1.0 - Sync & Timer Added</p>
         </div>
-
       </div>
     </main>
   );
