@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, Edit2, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { StarryBackground } from "@/components/ui/starry-background";
+import { DebugSync } from "@/components/debug-sync";
 
 export default function DashboardPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -61,6 +62,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen w-full flex flex-col items-center py-8 px-4 font-sans selection:bg-neon-blue selection:text-white relative">
       <StarryBackground />
+      <DebugSync />
       <div className="w-full max-w-md space-y-8 flex flex-col items-center relative z-10">
 
         {/* Header & Main Goal */}
