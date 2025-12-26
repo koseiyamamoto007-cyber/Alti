@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import confetti from "canvas-confetti";
-import { addHours, startOfHour, addDays, subDays, differenceInDays, parseISO, format, startOfDay } from "date-fns";
+import { addHours, startOfHour, addDays, subDays, differenceInDays, parseISO, format, startOfDay, endOfDay, differenceInSeconds } from "date-fns";
 import { ChevronLeft, ChevronRight, Edit2, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -165,6 +165,8 @@ export default function DashboardPage() {
               <span className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mt-2">Sync Rate</span>
             </div>
           </div>
+
+          <DayCountdown />
 
           <div className="text-center space-y-1 w-full">
             {/* Task Progress Bars */}
@@ -459,6 +461,47 @@ function DailyScore({ date }: { date: Date }) {
           <span className="text-lg text-zinc-600 font-bold font-mono">/10</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DayCountdown() {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const end = endOfDay(now);
+      const diff = differenceInSeconds(end, now);
+
+      if (diff <= 0) return "00:00:00";
+
+      const hours = Math.floor(diff / 3600);
+      const minutes = Math.floor((diff % 3600) / 60);
+      const seconds = diff % 60;
+
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!isMounted) return <div className="h-6" />;
+
+  return (
+    <div className="flex flex-col items-center animate-in fade-in duration-700">
+      <div className="font-mono text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-white to-neon-blue drop-shadow-[0_0_10px_rgba(41,98,255,0.8)] tracking-widest tabular-nums">
+        {timeLeft}
+      </div>
+      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mt-1">Time Remaining</p>
     </div>
   );
 }
